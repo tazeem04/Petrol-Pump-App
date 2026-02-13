@@ -272,3 +272,5 @@ D:\Petrol Pump App\Backend\obj\Debug\net8.0\refint\backend.dll
 D:\Petrol Pump App\Backend\obj\Debug\net8.0\backend.pdb
 D:\Petrol Pump App\Backend\obj\Debug\net8.0\backend.genruntimeconfig.cache
 D:\Petrol Pump App\Backend\obj\Debug\net8.0\ref\backend.dll
+D:\Petrol Pump App\backend\obj\Debug\net8.0\backend.sourcelink.json
+D:\Petrol Pump App\backend\bin\Debug\net8.0\backend.staticwebassets.runtime.json

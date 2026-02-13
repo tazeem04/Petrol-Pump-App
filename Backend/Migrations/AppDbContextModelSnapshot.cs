@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Backend.Migrations
+namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
@@ -30,15 +30,20 @@ namespace Backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Address")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("CurrentBalance")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -79,6 +84,31 @@ namespace Backend.Migrations
                     b.ToTable("DailyClosings");
                 });
 
+            modelBuilder.Entity("Backend.Models.DipLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("DipMM")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("QuantityLiters")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TankId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DipLogs");
+                });
+
             modelBuilder.Entity("Backend.Models.Nozzle", b =>
                 {
                     b.Property<int>("Id")
@@ -88,6 +118,14 @@ namespace Backend.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("FuelType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LabelSideA")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LabelSideB")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -103,36 +141,6 @@ namespace Backend.Migrations
                     b.HasIndex("TankId");
 
                     b.ToTable("Nozzles");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            FuelType = "Petrol",
-                            MachineName = "Machine 1",
-                            TankId = 1
-                        },
-                        new
-                        {
-                            Id = 2,
-                            FuelType = "Diesel",
-                            MachineName = "Machine 3",
-                            TankId = 2
-                        },
-                        new
-                        {
-                            Id = 3,
-                            FuelType = "Mobile Oil",
-                            MachineName = "Rack/Shelf",
-                            TankId = 3
-                        },
-                        new
-                        {
-                            Id = 4,
-                            FuelType = "Hi-Octane",
-                            MachineName = "Machine 2",
-                            TankId = 4
-                        });
                 });
 
             modelBuilder.Entity("Backend.Models.Payment", b =>
@@ -148,6 +156,10 @@ namespace Backend.Migrations
 
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("datetime2");
@@ -187,29 +199,55 @@ namespace Backend.Migrations
                             Id = 1,
                             CurrentPrice = 280m,
                             FuelType = "Petrol",
-                            LastUpdated = new DateTime(2026, 2, 3, 0, 12, 34, 457, DateTimeKind.Local).AddTicks(8626)
+                            LastUpdated = new DateTime(2026, 2, 14, 1, 1, 28, 573, DateTimeKind.Local).AddTicks(1181)
                         },
                         new
                         {
                             Id = 2,
                             CurrentPrice = 295m,
                             FuelType = "Diesel",
-                            LastUpdated = new DateTime(2026, 2, 3, 0, 12, 34, 457, DateTimeKind.Local).AddTicks(8629)
+                            LastUpdated = new DateTime(2026, 2, 14, 1, 1, 28, 573, DateTimeKind.Local).AddTicks(1186)
                         },
                         new
                         {
                             Id = 3,
                             CurrentPrice = 600m,
                             FuelType = "Mobile Oil",
-                            LastUpdated = new DateTime(2026, 2, 3, 0, 12, 34, 457, DateTimeKind.Local).AddTicks(8630)
+                            LastUpdated = new DateTime(2026, 2, 14, 1, 1, 28, 573, DateTimeKind.Local).AddTicks(1189)
                         },
                         new
                         {
                             Id = 4,
                             CurrentPrice = 330m,
                             FuelType = "Hi-Octane",
-                            LastUpdated = new DateTime(2026, 2, 3, 0, 12, 34, 457, DateTimeKind.Local).AddTicks(8631)
+                            LastUpdated = new DateTime(2026, 2, 14, 1, 1, 28, 573, DateTimeKind.Local).AddTicks(1191)
                         });
+                });
+
+            modelBuilder.Entity("Backend.Models.RateHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FuelType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("NewPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("OldPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RateHistories");
                 });
 
             modelBuilder.Entity("Backend.Models.Sale", b =>
@@ -253,6 +291,36 @@ namespace Backend.Migrations
                     b.ToTable("Sales");
                 });
 
+            modelBuilder.Entity("Backend.Models.StockRefill", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("CostPerLiter")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TankId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TankId");
+
+                    b.ToTable("StockRefills");
+                });
+
             modelBuilder.Entity("Backend.Models.Tank", b =>
                 {
                     b.Property<int>("Id")
@@ -271,38 +339,43 @@ namespace Backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("TankName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Tanks");
+                });
+
+            modelBuilder.Entity("Backend.Models.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
 
                     b.HasData(
                         new
                         {
                             Id = 1,
-                            Capacity = 20000m,
-                            CurrentStock = 10000m,
-                            FuelType = "Petrol"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Capacity = 30000m,
-                            CurrentStock = 15000m,
-                            FuelType = "Diesel"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Capacity = 1000m,
-                            CurrentStock = 500m,
-                            FuelType = "Mobile Oil"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Capacity = 5000m,
-                            CurrentStock = 2000m,
-                            FuelType = "Hi-Octane"
+                            Password = "admin123",
+                            Username = "admin"
                         });
                 });
 
@@ -354,6 +427,17 @@ namespace Backend.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("Nozzle");
+                });
+
+            modelBuilder.Entity("Backend.Models.StockRefill", b =>
+                {
+                    b.HasOne("Backend.Models.Tank", "Tank")
+                        .WithMany()
+                        .HasForeignKey("TankId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tank");
                 });
 
             modelBuilder.Entity("Backend.Models.Customer", b =>

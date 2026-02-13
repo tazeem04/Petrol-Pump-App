@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "zQWhxN/tcWQ=",
+  "dgSpecHash": "resLZUAE9Gs=",
   "success": true,
-  "projectFilePath": "D:\\Petrol Pump App\\Backend\\backend.csproj",
+  "projectFilePath": "D:\\Petrol Pump App\\backend\\backend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\tazee\\.nuget\\packages\\azure.core\\1.25.0\\azure.core.1.25.0.nupkg.sha512",
     "C:\\Users\\tazee\\.nuget\\packages\\azure.identity\\1.7.0\\azure.identity.1.7.0.nupkg.sha512",

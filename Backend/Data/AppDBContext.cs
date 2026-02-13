@@ -5,11 +5,13 @@ namespace Backend.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) 
         {
         }
 
-        // Tables
+        // --- User Table for Login ---
+        public DbSet<User> Users { get; set; }
+
         public DbSet<Tank> Tanks { get; set; }
         public DbSet<Nozzle> Nozzles { get; set; }
         public DbSet<Customer> Customers { get; set; }
@@ -18,20 +20,28 @@ namespace Backend.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<DailyClosing> DailyClosings { get; set; }
         public DbSet<StockRefill> StockRefills { get; set; }
+        public DbSet<RateHistory> RateHistories { get; set; }
+        public DbSet<DipLog> DipLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Adding default Tanks
-            modelBuilder.Entity<Tank>().HasData(
-                new Tank { Id = 1, FuelType = "Petrol", Capacity = 20000, CurrentStock = 10000 },
-                new Tank { Id = 2, FuelType = "Diesel", Capacity = 30000, CurrentStock = 15000 },
-                new Tank { Id = 3, FuelType = "Mobile Oil", Capacity = 1000, CurrentStock = 500 },
-                new Tank { Id = 4, FuelType = "Hi-Octane", Capacity = 5000, CurrentStock = 2000 }
-            );
+            // --- Decimal Precision Configuration ---
+            modelBuilder.Entity<Tank>().Property(t => t.Capacity).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Tank>().Property(t => t.CurrentStock).HasColumnType("decimal(18,2)");
 
-            // Adding default Rates
+            modelBuilder.Entity<StockRefill>().Property(s => s.Quantity).HasColumnType("decimal(18,2)");
+            
+            modelBuilder.Entity<DailyClosing>().Property(d => d.OpeningMeter).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<DailyClosing>().Property(d => d.ClosingMeter).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<DailyClosing>().Property(d => d.OpeningMeterB).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<DailyClosing>().Property(d => d.ClosingMeterB).HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Rate>().Property(r => r.CurrentPrice).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<Customer>().Property(c => c.CurrentBalance).HasColumnType("decimal(18,2)");
+
+            // --- Seed Data ---
             modelBuilder.Entity<Rate>().HasData(
                 new Rate { Id = 1, FuelType = "Petrol", CurrentPrice = 280, LastUpdated = DateTime.Now },
                 new Rate { Id = 2, FuelType = "Diesel", CurrentPrice = 295, LastUpdated = DateTime.Now },
@@ -39,12 +49,9 @@ namespace Backend.Data
                 new Rate { Id = 4, FuelType = "Hi-Octane", CurrentPrice = 330, LastUpdated = DateTime.Now }
             );
 
-            // Adding default Machines/Nozzles
-            modelBuilder.Entity<Nozzle>().HasData(
-                new Nozzle { Id = 1, MachineName = "Machine 1", FuelType = "Petrol", TankId = 1 },
-                new Nozzle { Id = 2, MachineName = "Machine 3", FuelType = "Diesel", TankId = 2 },
-                new Nozzle { Id = 3, MachineName = "Rack/Shelf", FuelType = "Mobile Oil", TankId = 3 },
-                new Nozzle { Id = 4, MachineName = "Machine 2", FuelType = "Hi-Octane", TankId = 4 }
+            // Seed Admin User (Simplified)
+            modelBuilder.Entity<User>().HasData(
+                new User { Id = 1, Username = "admin", Password = "admin123" }
             );
         }
     }

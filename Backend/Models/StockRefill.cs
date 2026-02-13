@@ -5,8 +5,10 @@ namespace Backend.Models
         public int Id { get; set; }
         public int TankId { get; set; }
         public DateTime Date { get; set; }
+        public Tank? Tank { get; set; }
         public decimal Quantity { get; set; }
         public decimal CostPerLiter { get; set; }
         public decimal TotalCost { get; set; }
+        //public string RecordedBy { get; set; } = "System";
     }
 }

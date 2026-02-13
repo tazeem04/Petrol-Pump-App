@@ -16,7 +16,7 @@ public class SalesController : ControllerBase
         _context = context;
     }
 
-    // 1. React ko Form bharne ke liye Data bhejna (GET: api/sales/formdata)
+    // 1. Form Data (Nozzles, Customers, Rates)
     [HttpGet("formdata")]
     public async Task<IActionResult> GetFormData()
     {
@@ -27,73 +27,112 @@ public class SalesController : ControllerBase
         return Ok(new { nozzles, customers, rates });
     }
 
-    // 2. Nayi Sale Save Karna (POST: api/sales)
-    // POST: api/sales
-[HttpPost]
-public async Task<IActionResult> PostSale(Sale sale)
-{
-    // 1. Machine (Nozzle) Check karein
-    var nozzle = await _context.Nozzles
-        .Include(n => n.Tank)
-        .FirstOrDefaultAsync(n => n.Id == sale.NozzleId);
-
-    if (nozzle == null) return BadRequest("Machine/Nozzle nahi mili.");
-
-    // 2. Rate Check karein (Rate k baghair Amount nahi ban sakti)
-    var rateObj = await _context.Rates
-        .FirstOrDefaultAsync(r => r.FuelType == nozzle.FuelType);
-
-    if (rateObj == null) return BadRequest($"Error: {nozzle.FuelType} ka Rate set nahi hai.");
-
-    // 3. Amount Calculate karein (Quantity * Rate)
-    // Ye boht zaroori hai taake Total paisay sahi banen
-    sale.RateAtSale = rateObj.CurrentPrice;
-    sale.TotalAmount = sale.Quantity * sale.RateAtSale;
-    sale.SaleDate = DateTime.Now;
-
-    // 4. Stock Minus karein
-    if (nozzle.Tank != null)
+    // 2. Recent Sales for Table
+    [HttpGet("recent")]
+    public async Task<IActionResult> GetRecentSales()
     {
-        nozzle.Tank.CurrentStock -= sale.Quantity;
-    }
-
-    // 5. CUSTOMER BALANCE UPDATE (Main Fix)
-    if (sale.IsCredit && sale.CustomerId != null)
-    {
-        var customer = await _context.Customers.FindAsync(sale.CustomerId);
-        if (customer != null)
-        {
-            // Yahan Balance Update ho raha hai
-            customer.CurrentBalance += sale.TotalAmount;
-            
-            // Explicitly batao ke customer update hua hai
-            _context.Customers.Update(customer);
-        }
-        else
-        {
-            return BadRequest("Customer database mein nahi mila.");
-        }
-    }
-
-    // 6. Save Everything
-    _context.Sales.Add(sale);
-    await _context.SaveChangesAsync();
-
-    return Ok(new { message = "Saved & Balance Updated", totalAmount = sale.TotalAmount });
-}
-    
-    // 3. Aaj ki Saari Sales dekhna (Reporting)
-    [HttpGet("today")]
-    public async Task<IActionResult> GetTodaySales()
-    {
-        var today = DateTime.Today;
         var sales = await _context.Sales
             .Include(s => s.Nozzle)
             .Include(s => s.Customer)
-            .Where(s => s.SaleDate >= today)
-            .OrderByDescending(s => s.SaleDate)
+            .OrderByDescending(s => s.Id)
+            .Take(10)
             .ToListAsync();
 
         return Ok(sales);
+    }
+
+    // 3. Post Sale 
+    [HttpPost]
+    public async Task<IActionResult> PostSale(Sale sale)
+    {
+        var nozzle = await _context.Nozzles
+            .Include(n => n.Tank)
+            .FirstOrDefaultAsync(n => n.Id == sale.NozzleId);
+
+        if (nozzle == null) return BadRequest("Machine/Nozzle nahi mili.");
+
+        var rateObj = await _context.Rates
+            .FirstOrDefaultAsync(r => r.FuelType == nozzle.FuelType);
+
+        if (rateObj == null) return BadRequest($"Error: {nozzle.FuelType} ka Rate set nahi hai.");
+
+        sale.RateAtSale = rateObj.CurrentPrice;
+        sale.TotalAmount = sale.Quantity * sale.RateAtSale;
+        sale.SaleDate = DateTime.Now;
+
+        // Stock Minus
+        if (nozzle.Tank != null) nozzle.Tank.CurrentStock -= sale.Quantity;
+
+        // Customer Balance Update
+        if (sale.IsCredit && sale.CustomerId != null)
+        {
+            var customer = await _context.Customers.FindAsync(sale.CustomerId);
+            if (customer != null)
+            {
+                customer.CurrentBalance += sale.TotalAmount;
+                _context.Customers.Update(customer);
+            }
+        }
+
+        _context.Sales.Add(sale);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Saved & Balance Updated", totalAmount = sale.TotalAmount });
+    }
+
+    // 4. Update Sale (PUT) 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateSale(int id, Sale updatedSale)
+    {
+        var existingSale = await _context.Sales.FindAsync(id);
+        if (existingSale == null) return NotFound();
+
+        // A. Reverse Old Balance and Stock
+        var customer = await _context.Customers.FindAsync(existingSale.CustomerId);
+        if (customer != null) customer.CurrentBalance -= existingSale.TotalAmount;
+
+        var oldNozzle = await _context.Nozzles.Include(n => n.Tank).FirstOrDefaultAsync(n => n.Id == existingSale.NozzleId);
+        if (oldNozzle?.Tank != null) oldNozzle.Tank.CurrentStock += existingSale.Quantity;
+
+        // B. Apply New Values
+        existingSale.Quantity = updatedSale.Quantity;
+        existingSale.TotalAmount = updatedSale.TotalAmount;
+        existingSale.VehicleNumber = updatedSale.VehicleNumber;
+        existingSale.NozzleId = updatedSale.NozzleId;
+
+        // C. Apply New Balance and Stock
+        if (customer != null) customer.CurrentBalance += updatedSale.TotalAmount;
+
+        var newNozzle = await _context.Nozzles.Include(n => n.Tank).FirstOrDefaultAsync(n => n.Id == updatedSale.NozzleId);
+        if (newNozzle?.Tank != null) newNozzle.Tank.CurrentStock -= updatedSale.Quantity;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Update Successful" });
+    }
+
+    // 5. Delete Sale
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteSale(int id)
+    {
+        var sale = await _context.Sales.FindAsync(id);
+        if (sale == null) return NotFound();
+
+        if (sale.IsCredit && sale.CustomerId != null)
+        {
+            var customer = await _context.Customers.FindAsync(sale.CustomerId);
+            if (customer != null)
+            {
+                customer.CurrentBalance -= sale.TotalAmount;
+                _context.Customers.Update(customer);
+            }
+        }
+
+        var nozzle = await _context.Nozzles.Include(n => n.Tank).FirstOrDefaultAsync(n => n.Id == sale.NozzleId);
+        if (nozzle?.Tank != null) nozzle.Tank.CurrentStock += sale.Quantity;
+
+        _context.Sales.Remove(sale);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Deleted" });
     }
 }

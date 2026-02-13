@@ -12,6 +12,7 @@ public class Sale
     // 1. Kis Nozzle se nikla?
     public int NozzleId { get; set; }
     public Nozzle? Nozzle { get; set; }
+    //public string RecordedBy { get; set; } = "System";
 
     // 2. Udhaar Logic
     public bool IsCredit { get; set; } = false;

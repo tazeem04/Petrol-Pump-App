@@ -1,39 +1,79 @@
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-
-// 1. Pages Import karein (Yahan wo nayi line aayi hai)
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import axios from 'axios';
+import { AppProvider } from "./context/AppContext";
+import Layout from "./components/Layout";
+import Dashboard from "./pages/Dashboard";
 import SaleEntry from "./pages/SaleEntry";
-import DailyClosing from "./pages/DailyClosing"; // <-- YE WALI LINE
+import DailyClosing from "./pages/DailyClosing";
+import PaymentEntry from "./pages/PaymentEntry";
+import StockEntry from "./pages/StockEntry";
+import CustomerLedger from "./pages/CustomerLedger";
+import CustomerList from "./pages/CustomerList";
+import CustomerProfile from "./pages/CustomerProfile";
+import RateSetting from "./pages/RateSetting";
+import Home from "./pages/Home";
+import Login from "./pages/Login"; // Make sure to import your new Login page
 
+// --- 1. AXIOS INTERCEPTOR (Must be outside the component) ---
+axios.interceptors.request.use(
+    (config) => {
+        const name = localStorage.getItem("operatorName");
+        if (name) {
+            config.headers['X-Operator-Name'] = name;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
 function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Directly read from localStorage to avoid stale state issues
+  const isAuthenticated = localStorage.getItem("isLoggedIn") === "true";
+
   return (
-    <Router>
-      <div className="container mt-4">
-        
-        {/* --- MENU / NAVIGATION BUTTONS --- */}
-        <nav className="d-flex justify-content-center gap-3 mb-4 p-3 bg-light rounded shadow-sm">
-            {/* Button 1: Sale Entry */}
-            <Link to="/" className="btn btn-danger fw-bold">
-              ⛽ Udhaar Entry
-            </Link>
-
-            {/* Button 2: Closing (Ye naya button hai) */}
-            <Link to="/closing" className="btn btn-primary fw-bold">
-              📊 Daily Closing
-            </Link>
-        </nav>
-
-        {/* --- PAGES ROUTING --- */}
+    <AppProvider>
+      <Router>
         <Routes>
-          {/* Jab "/" khule to SaleEntry dikhao */}
-          <Route path="/" element={<SaleEntry />} />
+          {/* 1. PUBLIC ROUTE */}
+          <Route 
+            path="/login" 
+            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
+          />
 
-          {/* Jab "/closing" khule to DailyClosing dikhao (Ye nayi Route hai) */}
-          <Route path="/closing" element={<DailyClosing />} />
+          {/* 2. PROTECTED ROUTES WRAPPER */}
+          {isAuthenticated ? (
+            <Route
+              path="/*"
+              element={
+                <Layout sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}>
+                  <Routes>
+                    <Route path="/home" element={<Home />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/sale" element={<SaleEntry />} />
+                    <Route path="/closing" element={<DailyClosing />} />
+                    <Route path="/payment" element={<PaymentEntry />} />
+                    <Route path="/stock" element={<StockEntry />} />
+                    <Route path="/customers" element={<CustomerList />} />
+                    <Route path="/customer-profile/:id" element={<CustomerProfile />} />
+                    <Route path="/ledger" element={<CustomerLedger />} />
+                    <Route path="/rates" element={<RateSetting />} />
+                    {/* Redirect any unknown route to home */}
+                    <Route path="*" element={<Navigate to="/home" replace />} />
+                  </Routes>
+                </Layout>
+              }
+            />
+          ) : (
+            /* 3. REDIRECT EVERYTHING ELSE TO LOGIN IF NOT AUTHENTICATED */
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          )}
         </Routes>
-
-      </div>
-    </Router>
+      </Router>
+    </AppProvider>
   );
 }
-
 export default App;

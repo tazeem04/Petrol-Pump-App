@@ -16,75 +16,104 @@ namespace Backend.Controllers
             _context = context;
         }
 
-        // GET: Form Data (Pichli Readings uthao)
+        [HttpGet]
+        public async Task<IActionResult> GetAllHistory()
+        {
+            var history = await _context.DailyClosings
+                .OrderByDescending(c => c.Date)
+                .ToListAsync();
+            return Ok(history);
+        }
+
         [HttpGet("formdata")]
         public async Task<IActionResult> GetFormData()
         {
-            var nozzles = await _context.Nozzles
+            var data = await _context.Nozzles
                 .Include(n => n.Tank)
-                .ToListAsync();
-
-            var rates = await _context.Rates.ToListAsync();
-            var closingData = new List<object>();
-
-            foreach (var n in nozzles)
-            {
-                // Is machine ki sab se aakhri entry dhoondo
-                var lastClosing = await _context.DailyClosings
-                    .Where(c => c.NozzleId == n.Id)
-                    .OrderByDescending(c => c.Date) // Sab se nayi date upar
-                    .FirstOrDefaultAsync();
-
-                // Agar pehli baar hai to 0, warna pichli Closing ban gayi aaj ki Opening
-                decimal openA = lastClosing != null ? lastClosing.ClosingMeter : 0;
-                decimal openB = lastClosing != null ? lastClosing.ClosingMeterB : 0; // Note: ClosingMeterB
-
-                var rate = rates.FirstOrDefault(r => r.FuelType == n.FuelType)?.CurrentPrice ?? 0;
-
-                closingData.Add(new
+                .Select(n => new
                 {
-                    nozzleId = n.Id,
-                    machineName = n.MachineName,
-                    fuelType = n.FuelType,
-                    openingMeterA = openA,
-                    openingMeterB = openB,
-                    currentRate = rate,
-                    stock = n.Tank?.CurrentStock ?? 0
-                });
-            }
+                    NozzleId = n.Id,
+                    MachineName = n.MachineName,
+                    FuelType = n.FuelType,
+                    CurrentRate = _context.Rates
+                                    .Where(r => r.FuelType == n.FuelType)
+                                    .Select(r => r.CurrentPrice)
+                                    .FirstOrDefault(),
+                    LabelSideA = n.LabelSideA,
+                    LabelSideB = n.LabelSideB,
+                    CurrentStock = n.Tank != null ? n.Tank.CurrentStock : 0,
+                    // Logic to get last closing as today's opening
+                    OpeningMeterA = _context.DailyClosings
+                                    .Where(c => c.NozzleId == n.Id)
+                                    .OrderByDescending(c => c.Date)
+                                    .Select(c => (decimal?)c.ClosingMeter)
+                                    .FirstOrDefault() ?? 0,
+                    OpeningMeterB = _context.DailyClosings
+                                    .Where(c => c.NozzleId == n.Id)
+                                    .OrderByDescending(c => c.Date)
+                                    .Select(c => (decimal?)c.ClosingMeterB)
+                                    .FirstOrDefault() ?? 0
+                }).ToListAsync();
 
-            return Ok(closingData);
+            return Ok(data);
         }
 
-        // POST: Save Closing
         [HttpPost]
         public async Task<IActionResult> PostClosing(DailyClosing closing)
         {
-            // Calculation logic
-            decimal saleA = closing.ClosingMeter - closing.OpeningMeter;
-            decimal saleB = closing.ClosingMeterB - closing.OpeningMeterB; // Side B logic
+            // Same Reading Block (Security for API)
+            if (closing.ClosingMeter == closing.OpeningMeter && closing.ClosingMeterB == closing.OpeningMeterB)
+            {
+                return BadRequest(new { message = "⚠️ Error: Same readings cannot be saved!" });
+            }
 
-            // Check for negative values (Agar user ne ghalat reading likh di)
+            decimal saleA = closing.ClosingMeter - closing.OpeningMeter;
+            decimal saleB = closing.ClosingMeterB - closing.OpeningMeterB;
+
             if (saleA < 0 || saleB < 0)
             {
                 return BadRequest(new { message = "❌ Error: Nayi Reading purani se kam nahi ho sakti!" });
             }
 
-            decimal totalLiters = saleA + saleB;
+            // --- UPSERT LOGIC (Update or Insert) ---
+            var existingRecord = await _context.DailyClosings.FindAsync(closing.Id);
 
-            // Stock Minus logic
-            var nozzle = await _context.Nozzles.Include(n => n.Tank).FirstOrDefaultAsync(n => n.Id == closing.NozzleId);
-            if (nozzle != null && nozzle.Tank != null)
+            if (existingRecord != null)
             {
-                nozzle.Tank.CurrentStock -= totalLiters;
+                // Agar Edit mode hai (ID match kar gayi), toh purana update karo
+                existingRecord.ClosingMeter = closing.ClosingMeter;
+                existingRecord.ClosingMeterB = closing.ClosingMeterB;
+                existingRecord.Date = DateTime.Now;
+                _context.DailyClosings.Update(existingRecord);
+            }
+            else
+            {
+                // Agar Nayi entry hai, toh stock kam karo aur add karo
+                decimal totalLiters = saleA + saleB;
+                var nozzle = await _context.Nozzles.Include(n => n.Tank).FirstOrDefaultAsync(n => n.Id == closing.NozzleId);
+
+                if (nozzle != null && nozzle.Tank != null)
+                {
+                    nozzle.Tank.CurrentStock -= totalLiters;
+                }
+
+                closing.Date = DateTime.Now;
+                _context.DailyClosings.Add(closing);
             }
 
-            closing.Date = DateTime.Now;
-
-            _context.DailyClosings.Add(closing);
             await _context.SaveChangesAsync();
+            return Ok(new { message = "✅ Success!" });
+        }
 
-            return Ok(new { message = "✅ Closing Saved Successfully!", totalLiters });
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var record = await _context.DailyClosings.FindAsync(id);
+            if (record == null) return NotFound();
+
+            _context.DailyClosings.Remove(record);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "🗑️ Record Deleted Successfully!" });
         }
     }
 }

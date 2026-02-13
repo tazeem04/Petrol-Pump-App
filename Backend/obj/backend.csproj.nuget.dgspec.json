@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Petrol Pump App\\Backend\\backend.csproj": {}
+    "D:\\Petrol Pump App\\backend\\backend.csproj": {}
   },
   "projects": {
-    "D:\\Petrol Pump App\\Backend\\backend.csproj": {
+    "D:\\Petrol Pump App\\backend\\backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Petrol Pump App\\Backend\\backend.csproj",
+        "projectUniqueName": "D:\\Petrol Pump App\\backend\\backend.csproj",
         "projectName": "backend",
-        "projectPath": "D:\\Petrol Pump App\\Backend\\backend.csproj",
+        "projectPath": "D:\\Petrol Pump App\\backend\\backend.csproj",
         "packagesPath": "C:\\Users\\tazee\\.nuget\\packages\\",
-        "outputPath": "D:\\Petrol Pump App\\Backend\\obj\\",
+        "outputPath": "D:\\Petrol Pump App\\backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\tazee\\AppData\\Roaming\\NuGet\\NuGet.Config"

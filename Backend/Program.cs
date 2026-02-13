@@ -20,7 +20,6 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReact",
         policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -30,11 +29,19 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// 3. CORS Middleware Use karo
+// --- YE SECTION SAB SE AHAM HAI ---
+
+// 1. Static Files Enable karein (Taake uploads nazar aayein)
+app.UseStaticFiles();
+
+// 2. CORS Use karein
 app.UseCors("AllowReact");
 
+// 3. Routing aur baki middlewares
 app.UseHttpsRedirection();
+app.UseRouting(); // Routing lazmi hai controllers se pehle
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

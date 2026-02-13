@@ -1,11 +1,13 @@
 namespace Backend.Models;
+
 public class Customer
 {
     public int Id { get; set; }
-    public string Name { get; set; } = ""; 
-    public string Phone { get; set; } = "";
-    public decimal CurrentBalance { get; set; } = 0; // Positive = Is ne dene hain
-
-    // Parent-Child: Aik customer ki hazaron sales ho sakti hain
+    public string Name { get; set; } = ""; // Name Required hai
+    public string? Phone { get; set; } // Optional
+    public string? Address { get; set; } // Optional
+    public string? ImageUrl { get; set; } // Optional
+    public decimal CurrentBalance { get; set; } = 0;
+    //public string RecordedBy { get; set; } = "System";
     public List<Sale> Sales { get; set; } = new();
 }

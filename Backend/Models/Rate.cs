@@ -6,4 +6,5 @@ public class Rate
     public string FuelType { get; set; } = ""; 
     public decimal CurrentPrice { get; set; }
     public DateTime LastUpdated { get; set; } = DateTime.Now;
+    //public string RecordedBy { get; set; } = "System";
 }
